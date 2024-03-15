@@ -37,7 +37,7 @@ export class GigaChat {
        ...defaultMessageOptions,
       ...(options.messageOptions ? { ...options.messageOptions } : {}),
     };
-    this.messages = [...options.initMessages] ?? [];
+    this.messages = options?.initMessages ? [...options.initMessages] : [];
   }
 
   async auth() {
@@ -61,6 +61,7 @@ export class GigaChat {
 
   async send(content) {
     await this.auth();
+
     this.messages.push({ role: ROLES.USER, content });
     const response = await fetch(MESSAGE_URL, {
       agent: httpsAgent,
@@ -74,10 +75,14 @@ export class GigaChat {
         messages: this.messages,
       }),
     });
-    const json = await response.json();
-    this.messages.push(json?.choices?.[0]?.message);
+    try {
+      const json = await response.json();
+      this.messages.push(json?.choices?.[0]?.message);
     
-    return json?.choices?.[0]?.message?.content;
+      return json?.choices?.[0]?.message?.content;
+    } catch (e) {
+      return text.join(' ');
+    }
   }
 
   async getTokenCount() {
